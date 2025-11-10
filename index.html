@@ -77,7 +77,7 @@
             </div>
             <div>
               <label>Duration (minutes)</label><br>
-              <div class="duration-fixed" aria-hidden="true">30</div>
+              <input name="duration" type="number" min="1" value="30" required>
             </div>
             <div>
               <label>DJ handle</label><br>
@@ -107,17 +107,19 @@
           node.dataset.index = index;
           // set names/ids for inputs so they are unique
           const startFixed = node.querySelector('.start-fixed');
-          const durationFixed = node.querySelector('.duration-fixed');
+          const durationInput = node.querySelector('input[name="duration"]');
           const dj = node.querySelector('input[name="dj"]');
           if(startFixed){
             startFixed.id = `start-${index}`;
             // set fixed start time text if provided
             startFixed.textContent = fixedStartTime || '—';
           }
-          if(durationFixed){
-            durationFixed.id = `duration-${index}`;
-            // set fixed duration text if provided (fallback to 30)
-            durationFixed.textContent = (typeof fixedDuration !== 'undefined' && fixedDuration !== null) ? String(fixedDuration) : durationFixed.textContent || '30';
+          if(durationInput){
+            durationInput.id = `duration-${index}`;
+            durationInput.name = `duration-${index}`;
+            // set duration value if provided (fallback to 30)
+            durationInput.value = (typeof fixedDuration !== 'undefined' && fixedDuration !== null) ? fixedDuration : durationInput.value || '30';
+            durationInput.addEventListener('input', updateTimes);
           }
           dj.id = `dj-${index}`;
           dj.name = `dj-${index}`;
@@ -137,9 +139,7 @@
           // determine duration value from the row that triggered the add
           let sourceDuration = null;
           const durationInput = afterNode.querySelector('input[type="number"]');
-          const durationFixed = afterNode.querySelector('.duration-fixed');
           if(durationInput) sourceDuration = parseInt(durationInput.value,10) || 0;
-          else if(durationFixed) sourceDuration = parseInt(durationFixed.textContent,10) || 0;
 
           const newNode = makeSlotNode(currentCount, sourceDuration, null);
           // insert after the node
@@ -207,8 +207,7 @@
           for(let i=0;i<rows.length;i++){
             const row = rows[i];
             const durationInput = row.querySelector('input[type="number"]');
-            const durationFixed = row.querySelector('.duration-fixed');
-            const duration = parseInt((durationInput ? durationInput.value : (durationFixed ? durationFixed.textContent : '0')),10) || 0;
+            const duration = parseInt((durationInput ? durationInput.value : '0'),10) || 0;
             const startFixed = row.querySelector('.start-fixed');
 
             if(i===0){
@@ -242,8 +241,7 @@
           for(let i=0;i<rows.length;i++){
             const row = rows[i];
             const durationInput = row.querySelector('input[type="number"]');
-            const durationFixed = row.querySelector('.duration-fixed');
-            const duration = parseInt((durationInput ? durationInput.value : (durationFixed ? durationFixed.textContent : '0')),10) || 0;
+            const duration = parseInt((durationInput ? durationInput.value : '0'),10) || 0;
             const dj = (row.querySelector('input[type="text"]')||{value:''}).value || '';
 
             if(i===0){
