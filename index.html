@@ -66,8 +66,6 @@
               </div>
             </fieldset>
           </div>
-
-          <p style="margin-top:.75rem"><button type="button" id="previewBtn">Preview Discord Slots</button></p>
         </form>
 
         <template id="slotTemplate">
@@ -247,15 +245,30 @@
             const durationFixed = row.querySelector('.duration-fixed');
             const duration = parseInt((durationInput ? durationInput.value : (durationFixed ? durationFixed.textContent : '0')),10) || 0;
             const dj = (row.querySelector('input[type="text"]')||{value:''}).value || '';
-            let timeLabel = '—';
+
             if(i===0){
-              if(cursor) timeLabel = cursor.toLocaleString();
-              cursor = cursor ? new Date(cursor.getTime() + duration*60000) : null;
+              if(cursor){
+                const startTime = new Date(cursor);
+                const endTime = new Date(cursor.getTime() + duration*60000);
+                // convert to UTC unix timestamps (seconds)
+                const startUnix = Math.floor(startTime.getTime() / 1000);
+                const endUnix = Math.floor(endTime.getTime() / 1000);
+                const djPart = dj ? ` @${dj}` : '';
+                lines.push(`${i+1}. <t:${startUnix}:F> til <t:${endUnix}:t>${djPart}`);
+                cursor = endTime;
+              }
             } else {
-              if(cursor) timeLabel = cursor.toLocaleString();
-              cursor = cursor ? new Date(cursor.getTime() + duration*60000) : null;
+              if(cursor){
+                const startTime = new Date(cursor);
+                const endTime = new Date(cursor.getTime() + duration*60000);
+                // convert to UTC unix timestamps (seconds)
+                const startUnix = Math.floor(startTime.getTime() / 1000);
+                const endUnix = Math.floor(endTime.getTime() / 1000);
+                const djPart = dj ? ` @${dj}` : '';
+                lines.push(`${i+1}. <t:${startUnix}:F> til <t:${endUnix}:t>${djPart}`);
+                cursor = endTime;
+              }
             }
-            lines.push(`${i+1}. ${timeLabel} — ${duration}m — ${dj}`);
           }
 
           preview.textContent = lines.join('\n');
