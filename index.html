@@ -6,19 +6,266 @@
     <title>Discord DJ Slots</title>
     <meta name="description" content="Discord DJ Slots — GitHub Pages site">
     <style>
-      body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0f172a;color:#e6eef8}
-      main{max-width:720px;text-align:center;padding:2rem}
+      body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:#0f172a;color:#e6eef8;margin:0;padding:2rem}
+      .container{max-width:900px;margin:0 auto}
+      header{text-align:center;margin-bottom:1rem}
       h1{font-size:2rem;margin:0 0 .5rem}
       p{margin:.5rem 0}
       a{color:#7dd3fc}
+
+      /* Form styles */
+      form#slotsForm{background:#071127;padding:1rem;border-radius:8px}
+      .slot-row{display:flex;gap:.5rem;align-items:end;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+      .slot-row:last-child{border-bottom:none}
+      .slot-row label{font-size:.8rem;color:#9fb0c9}
+      .slot-row input[type="text"],
+      .slot-row input[type="number"],
+      .slot-row input[type="datetime-local"]{background:#0b1220;border:1px solid rgba(255,255,255,0.06);color:inherit;padding:.4rem .5rem;border-radius:4px}
+      .start-fixed,
+      .duration-fixed{background:transparent;border:1px solid rgba(255,255,255,0.02);padding:.4rem .5rem;border-radius:4px;color:#cfe9f7}
+      .slot-controls{display:flex;flex-direction:row;gap:.5rem}
+      .add-slot-btn{background:#0ea5a0;border:none;color:#06202a;padding:.45rem .6rem;border-radius:4px;cursor:pointer}
+      .remove-slot-btn{background:#d97706;border:none;color:#06202a;padding:.45rem .6rem;border-radius:4px;cursor:pointer}
+      @media (max-width:720px){
+        .slot-row{flex-direction:column;align-items:stretch}
+      }
     </style>
   </head>
   <body>
-    <main>
-      <h1>Discord DJ Slots</h1>
-      <p>Welcome — this is a simple GitHub Pages scaffold placed in the <code>pages/</code> directory.</p>
-      <p>To publish from the repository's pages folder, configure GitHub Pages in the repository settings and choose the <strong>pages</strong> folder as the source.</p>
-      <p><small>Created on Nov 10, 2025.</small></p>
+    <main class="container">
+      <header>
+        <h1>Discord DJ Slots</h1>
+        <p>Use the form below to create slots. Duration is in minutes.</p>
+      </header>
+
+      <section aria-labelledby="slot-info">
+        <h2 id="slot-info">Input Slot Information</h2>
+
+        <form id="slotsForm" onsubmit="return false;">
+          <div id="slotsContainer">
+            <!-- First slot: includes editable start time in first column -->
+            <fieldset class="slot-row" data-index="0">
+              <div>
+                <label for="start-0">Start time</label><br>
+                <input id="start-0" name="start-0" type="datetime-local">
+              </div>
+
+              <div>
+                <label for="duration-0">Duration (minutes)</label><br>
+                <input id="duration-0" name="duration-0" type="number" min="1" value="30" required>
+              </div>
+
+              <div>
+                <label for="dj-0">DJ handle</label><br>
+                <input id="dj-0" name="dj-0" type="text" placeholder="@djname">
+              </div>
+
+              <div class="slot-controls">
+                <button type="button" class="add-slot-btn">Add another slot</button>
+                <button type="button" class="remove-slot-btn">Remove slot</button>
+              </div>
+            </fieldset>
+          </div>
+
+          <p style="margin-top:.75rem"><button type="button" id="previewBtn">Preview Discord Slots</button></p>
+        </form>
+
+        <template id="slotTemplate">
+          <fieldset class="slot-row" data-index="">
+            <!-- subsequent slots: start time as fixed string in first column -->
+            <div>
+              <label>Start time</label><br>
+              <div class="start-fixed" aria-live="polite">—</div>
+            </div>
+            <div>
+              <label>Duration (minutes)</label><br>
+              <div class="duration-fixed" aria-hidden="true">30</div>
+            </div>
+            <div>
+              <label>DJ handle</label><br>
+              <input name="dj" type="text" placeholder="@djname">
+            </div>
+            <div class="slot-controls">
+              <button type="button" class="add-slot-btn">Add another slot</button>
+              <button type="button" class="remove-slot-btn">Remove slot</button>
+            </div>
+          </fieldset>
+        </template>
+
+        <h2 style="margin-top:1.25rem">Discord Formatted Slots</h2>
+        <pre id="preview" style="white-space:pre-wrap;background:#031022;padding:1rem;border-radius:6px;color:#c7dde9;max-height:300px;overflow:auto">(preview here)</pre>
+      </section>
+
     </main>
+
+    <script>
+      (function(){
+        const slotsContainer = document.getElementById('slotsContainer');
+        const template = document.getElementById('slotTemplate');
+        const preview = document.getElementById('preview');
+
+        function makeSlotNode(index, fixedDuration, fixedStartTime){
+          const node = template.content.firstElementChild.cloneNode(true);
+          node.dataset.index = index;
+          // set names/ids for inputs so they are unique
+          const startFixed = node.querySelector('.start-fixed');
+          const durationFixed = node.querySelector('.duration-fixed');
+          const dj = node.querySelector('input[name="dj"]');
+          if(startFixed){
+            startFixed.id = `start-${index}`;
+            // set fixed start time text if provided
+            startFixed.textContent = fixedStartTime || '—';
+          }
+          if(durationFixed){
+            durationFixed.id = `duration-${index}`;
+            // set fixed duration text if provided (fallback to 30)
+            durationFixed.textContent = (typeof fixedDuration !== 'undefined' && fixedDuration !== null) ? String(fixedDuration) : durationFixed.textContent || '30';
+          }
+          dj.id = `dj-${index}`;
+          dj.name = `dj-${index}`;
+          // wire up add button
+          const addBtn = node.querySelector('.add-slot-btn');
+          addBtn.addEventListener('click', (e) => { const row = e.target.closest('.slot-row'); addSlotAfter(row); });
+          // wire up remove button
+          const removeBtn = node.querySelector('.remove-slot-btn');
+          removeBtn.addEventListener('click', (e) => { const row = e.target.closest('.slot-row'); removeSlot(row); });
+          // update on dj input change
+          dj.addEventListener('input', updatePreview);
+          return node;
+        }
+
+        function addSlotAfter(afterNode){
+          const currentCount = slotsContainer.querySelectorAll('.slot-row').length;
+          // determine duration value from the row that triggered the add
+          let sourceDuration = null;
+          const durationInput = afterNode.querySelector('input[type="number"]');
+          const durationFixed = afterNode.querySelector('.duration-fixed');
+          if(durationInput) sourceDuration = parseInt(durationInput.value,10) || 0;
+          else if(durationFixed) sourceDuration = parseInt(durationFixed.textContent,10) || 0;
+
+          const newNode = makeSlotNode(currentCount, sourceDuration, null);
+          // insert after the node
+          afterNode.after(newNode);
+          updateButtonVisibility();
+          updateTimes();
+        }
+
+        function removeSlot(row){
+          const rows = Array.from(slotsContainer.querySelectorAll('.slot-row'));
+          // don't allow removing the last slot if it's the only one
+          if(rows.length <= 1) return;
+          row.remove();
+          updateButtonVisibility();
+          updateTimes();
+        }
+
+        // attach add handler for first slot's add button
+        document.querySelectorAll('.add-slot-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const row = e.target.closest('.slot-row');
+            addSlotAfter(row);
+          });
+        });
+
+        // wire up inputs in the initial first row
+        const startInput = document.getElementById('start-0');
+        document.getElementById('duration-0').addEventListener('input', updateTimes);
+        document.getElementById('dj-0').addEventListener('input', updatePreview);
+        startInput.addEventListener('input', updateTimes);
+
+        function parseDateTimeLocal(value){
+          if(!value) return null;
+          // value like 2025-11-10T14:30
+          const d = new Date(value);
+          return isNaN(d.getTime()) ? null : d;
+        }
+
+        function updateButtonVisibility(){
+          const rows = Array.from(slotsContainer.querySelectorAll('.slot-row'));
+          const lastIndex = rows.length - 1;
+          const isOnlyOneSlot = rows.length === 1;
+          rows.forEach((row, i) => {
+            const addBtn = row.querySelector('.add-slot-btn');
+            const removeBtn = row.querySelector('.remove-slot-btn');
+            const isFirstSlot = i === 0;
+            const isLastSlot = i === lastIndex;
+
+            if(addBtn){
+              addBtn.style.display = isLastSlot ? 'block' : 'none';
+            }
+            if(removeBtn){
+              // show remove only on last slot, and not on first slot if it's the only slot
+              removeBtn.style.display = (isLastSlot && !(isFirstSlot && isOnlyOneSlot)) ? 'block' : 'none';
+            }
+          });
+        }
+
+        function updateTimes(){
+          const rows = Array.from(slotsContainer.querySelectorAll('.slot-row'));
+          const startVal = document.getElementById('start-0').value;
+          const startDate = parseDateTimeLocal(startVal);
+          let cursor = startDate ? new Date(startDate) : null;
+
+          for(let i=0;i<rows.length;i++){
+            const row = rows[i];
+            const durationInput = row.querySelector('input[type="number"]');
+            const durationFixed = row.querySelector('.duration-fixed');
+            const duration = parseInt((durationInput ? durationInput.value : (durationFixed ? durationFixed.textContent : '0')),10) || 0;
+            const startFixed = row.querySelector('.start-fixed');
+
+            if(i===0){
+              // first row: start time is editable, do not overwrite it
+              if(startDate){
+                cursor = new Date(startDate.getTime() + duration*60000);
+              } else {
+                cursor = null;
+              }
+            } else {
+              // subsequent rows: show computed start time in fixed element
+              if(cursor){
+                if(startFixed) startFixed.textContent = cursor.toLocaleString();
+                cursor = new Date(cursor.getTime() + duration*60000);
+              } else {
+                if(startFixed) startFixed.textContent = '—';
+              }
+            }
+          }
+
+          updatePreview();
+        }
+
+        function updatePreview(){
+          const rows = Array.from(slotsContainer.querySelectorAll('.slot-row'));
+          const startVal = document.getElementById('start-0').value;
+          const startDate = parseDateTimeLocal(startVal);
+          let cursor = startDate ? new Date(startDate) : null;
+          const lines = [];
+
+          for(let i=0;i<rows.length;i++){
+            const row = rows[i];
+            const durationInput = row.querySelector('input[type="number"]');
+            const durationFixed = row.querySelector('.duration-fixed');
+            const duration = parseInt((durationInput ? durationInput.value : (durationFixed ? durationFixed.textContent : '0')),10) || 0;
+            const dj = (row.querySelector('input[type="text"]')||{value:''}).value || '';
+            let timeLabel = '—';
+            if(i===0){
+              if(cursor) timeLabel = cursor.toLocaleString();
+              cursor = cursor ? new Date(cursor.getTime() + duration*60000) : null;
+            } else {
+              if(cursor) timeLabel = cursor.toLocaleString();
+              cursor = cursor ? new Date(cursor.getTime() + duration*60000) : null;
+            }
+            lines.push(`${i+1}. ${timeLabel} — ${duration}m — ${dj}`);
+          }
+
+          preview.textContent = lines.join('\n');
+        }
+
+        // initial compute
+        updateButtonVisibility();
+        updateTimes();
+
+      })();
+    </script>
   </body>
 </html>
