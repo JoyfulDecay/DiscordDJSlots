@@ -246,25 +246,17 @@
 
             if(i===0){
               if(cursor){
-                const startTime = new Date(cursor);
-                const endTime = new Date(cursor.getTime() + duration*60000);
-                // convert to UTC unix timestamps (seconds)
-                const startUnix = Math.floor(startTime.getTime() / 1000);
-                const endUnix = Math.floor(endTime.getTime() / 1000);
+                const startUnix = Math.floor(cursor.getTime() / 1000);
                 const djPart = dj ? ` @${dj}` : '';
-                lines.push(`${i+1}. <t:${startUnix}:F> til <t:${endUnix}:t>${djPart}`);
-                cursor = endTime;
+                lines.push(`${i+1}. <t:${startUnix}:F>${djPart}`);
+                cursor = new Date(cursor.getTime() + duration*60000);
               }
             } else {
               if(cursor){
-                const startTime = new Date(cursor);
-                const endTime = new Date(cursor.getTime() + duration*60000);
-                // convert to UTC unix timestamps (seconds)
-                const startUnix = Math.floor(startTime.getTime() / 1000);
-                const endUnix = Math.floor(endTime.getTime() / 1000);
+                const startUnix = Math.floor(cursor.getTime() / 1000);
                 const djPart = dj ? ` @${dj}` : '';
-                lines.push(`${i+1}. <t:${startUnix}:F> til <t:${endUnix}:t>${djPart}`);
-                cursor = endTime;
+                lines.push(`${i+1}. <t:${startUnix}:F>${djPart}`);
+                cursor = new Date(cursor.getTime() + duration*60000);
               }
             }
           }
